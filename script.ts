@@ -1,133 +1,82 @@
 interface Vertex {
-  id: number;
   name: string;
   x: number;
   y: number;
-  adjacentVertices: Array<number>;
+  adjacentVertices: Array<string>;
 }
 
-const vertices: Array<Vertex> = [
-  {
-    id: 1,
-    name: "A",
-    x: 351,
-    y: 358,
-    adjacentVertices: [6, 8],
-  },
-  {
-    id: 2,
-    name: "B",
-    x: 440,
-    y: 170,
-    adjacentVertices: [2, 3, 4, 6],
-  },
-  {
-    id: 3,
-    name: "C",
-    x: 460,
-    y: 27,
-    adjacentVertices: [2, 5],
-  },
-  {
-    id: 4,
-    name: "D",
-    x: 634,
-    y: 279,
-    adjacentVertices: [2, 8],
-  },
-  {
-    id: 5,
-    name: "E",
-    x: 848,
-    y: 195,
-    adjacentVertices: [3, 8],
-  },
-  {
-    id: 6,
-    name: "F",
-    x: 80,
-    y: 101,
-    adjacentVertices: [1, 2, 7],
-  },
-  {
-    id: 7,
-    name: "G",
-    x: 60,
-    y: 300,
-    adjacentVertices: [6],
-  },
-  {
-    id: 8,
-    name: "H",
-    x: 750,
-    y: 400,
-    adjacentVertices: [1, 4, 5],
-  },
-];
+main();
 
-const locationNames = ["A", "B", "C", "D", "E", "F", "G", "H"];
+async function main() {
+  let vertices: Array<Vertex> = await fetch("./vertices.json").then((data) =>
+    data.json()
+  );
 
-let canvas = create("canvas", { width: 900, height: 500 }) as HTMLCanvasElement;
+  let canvas = create("canvas", {
+    width: 900,
+    height: 500,
+  }) as HTMLCanvasElement;
 
-let fromSelector = create(
-  "select",
-  null,
-  locationNames.map((s) =>
-    create("option", {
-      value: vertices.find((val) => val.name == s)?.id,
-      innerText: s,
-    })
-  )
-) as HTMLSelectElement;
+  let fromSelector = create(
+    "select",
+    null,
+    vertices.map((val) =>
+      create("option", {
+        value: val.name,
+        innerText: val.name,
+      })
+    )
+  ) as HTMLSelectElement;
 
-let toSelector = create(
-  "select",
-  null,
-  locationNames.map((s) =>
-    create("option", {
-      value: vertices.find((val) => val.name == s)?.id,
-      innerText: s,
-    })
-  )
-) as HTMLSelectElement;
+  let toSelector = create(
+    "select",
+    null,
+    vertices.map((val) =>
+      create("option", {
+        value: val.name,
+        innerText: val.name,
+      })
+    )
+  ) as HTMLSelectElement;
 
-let div = create("div", null, [
-  canvas,
-  create("br"),
-  create("div", { className: "controls" }, [
-    create("span", null, ["From: ", fromSelector]),
-    create("span", null, ["To: ", toSelector]),
-    create("button", {
-      innerText: "▶ Find Shortest Path",
-      onclick: () => {
-        let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let div = create("div", null, [
+    canvas,
+    create("br"),
+    create("div", { className: "controls" }, [
+      create("span", null, ["From: ", fromSelector]),
+      create("span", null, ["To: ", toSelector]),
+      create("button", {
+        innerText: "▶ Find Shortest Path",
+        onclick: () => {
+          let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        displayBaseLines();
+          displayBaseLines(canvas, vertices);
 
-        let from = Number(fromSelector.value);
-        let to = Number(toSelector.value);
+          let from = fromSelector.value;
+          let to = toSelector.value;
 
-        displayShortestPath(from, to);
-        displayNodes();
-      },
-    }),
-  ]),
-]);
+          displayShortestPath(from, to, canvas, vertices);
+          displayNodes(canvas, vertices);
+        },
+      }),
+    ]),
+  ]);
 
-document.body.appendChild(div);
+  document.body.appendChild(div);
 
-displayBaseLines();
-displayNodes();
+  displayBaseLines(canvas, vertices);
+  displayNodes(canvas, vertices);
+}
 
-function displayBaseLines() {
+function displayBaseLines(canvas: HTMLCanvasElement, vertices: Array<Vertex>) {
   let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
   for (let vertex of vertices) {
     const { x, y, adjacentVertices } = vertex;
 
-    for (let id of adjacentVertices) {
-      let adjVertex = vertices.find((v) => id == v.id) as Vertex;
+    for (let name of adjacentVertices) {
+      let adjVertex = vertices.find((v) => name == v.name) as Vertex;
 
       ctx.moveTo(x, y);
       ctx.lineTo(adjVertex.x, adjVertex.y);
@@ -136,7 +85,12 @@ function displayBaseLines() {
   }
 }
 
-function displayShortestPath(from: number, to: number) {
+function displayShortestPath(
+  from: string,
+  to: string,
+  canvas: HTMLCanvasElement,
+  vertices: Array<Vertex>
+) {
   if (from == to) return;
 
   let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -156,7 +110,7 @@ function displayShortestPath(from: number, to: number) {
   ctx.strokeStyle = "black";
 }
 
-function displayNodes() {
+function displayNodes(canvas: HTMLCanvasElement, vertices: Array<Vertex>) {
   let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
   ctx.font = "28px 'Open Sans'";
 
@@ -181,17 +135,17 @@ function displayNodes() {
   ctx.fillStyle = "black";
 }
 
-function dijkstra(vertices: Array<Vertex>, from: number, to: number) {
+function dijkstra(vertices: Array<Vertex>, from: string, to: string) {
   interface DijkstraNode extends Vertex {
     distance: number;
-    previous: number | undefined;
+    previous: string | undefined;
   }
 
-  let graphNodes = new Map<number, DijkstraNode>();
-  let results = new Map<number, DijkstraNode>();
+  let graphNodes = new Map<string, DijkstraNode>();
+  let results = new Map<string, DijkstraNode>();
 
   for (let v of vertices) {
-    graphNodes.set(v.id, {
+    graphNodes.set(v.name, {
       distance: Infinity,
       previous: undefined,
       ...v,
@@ -203,8 +157,8 @@ function dijkstra(vertices: Array<Vertex>, from: number, to: number) {
   while (graphNodes.size > 0) {
     let u = minimumDistanceNode(graphNodes);
 
-    results.set(u.id, u);
-    graphNodes.delete(u.id);
+    results.set(u.name, u);
+    graphNodes.delete(u.name);
 
     for (let adjNodeId of u.adjacentVertices) {
       if (graphNodes.has(adjNodeId)) {
@@ -214,7 +168,7 @@ function dijkstra(vertices: Array<Vertex>, from: number, to: number) {
 
         if (alt < v.distance) {
           v.distance = alt;
-          v.previous = u.id;
+          v.previous = u.name;
         }
       }
     }
@@ -247,7 +201,7 @@ function dijkstra(vertices: Array<Vertex>, from: number, to: number) {
     return Math.sqrt(Math.pow(u.x - v.x, 2) + Math.pow(u.y - v.y, 2));
   }
 
-  function minimumDistanceNode(map: Map<number, DijkstraNode>) {
+  function minimumDistanceNode(map: Map<string, DijkstraNode>) {
     return Array.from(map.values()).reduce((prev, curr) =>
       prev.distance < curr.distance ? prev : curr
     );
