@@ -112,7 +112,7 @@ function displayShortestPath(
 
 function displayNodes(canvas: HTMLCanvasElement, vertices: Array<Vertex>) {
   let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-  ctx.font = "28px 'Open Sans'";
+  ctx.font = "24px 'Open sans'";
 
   for (let v of vertices) {
     const { x, y, name } = v;
@@ -122,7 +122,7 @@ function displayNodes(canvas: HTMLCanvasElement, vertices: Array<Vertex>) {
 
     ctx.moveTo(x, y);
     ctx.beginPath();
-    ctx.arc(x, y, 18, 0, 7);
+    ctx.arc(x, y, 16, 0, 7);
     ctx.fill();
 
     ctx.strokeStyle = "white";
